@@ -5,13 +5,13 @@ import numpy.typing as ntp
 
 def read_properties(path : str) -> dict[str, float]:
     '''
-    Функция для чтения параметров из yaml файла
+    Функция для чтения параметров из yaml файла.
 
     Принимаемые параметры:
-    path - строка с путём к файлу с параметрами
+    path - строка с путём к файлу с параметрами.
 
     Возвращаемые значения:
-    properties - словарь с параметрами из файла
+    properties - словарь с параметрами из файла.
     '''
     file = open(path, 'r')
     property_lines = file.readlines()
@@ -26,13 +26,11 @@ def read_properties(path : str) -> dict[str, float]:
 
 def write_results(path : str, arr : tp.Iterable[float]) -> None:
     '''
-    Функция для записи резулятатов вычислений в файл
+    Функция для записи резулятатов вычислений в файл.
 
     Принимаемые параметры:
-    path - строка с путём к файлу для записи
-    arr - итератор по множеству результата
-
-    Возвращаемых значений нет.
+    path - строка с путём к файлу для записи.
+    arr - итератор по множеству результата.
     '''
     file = open(path, 'w')
     for elem in arr:
@@ -41,10 +39,10 @@ def write_results(path : str, arr : tp.Iterable[float]) -> None:
 
 def function_init(a : float, b : float, c : float) -> tp.Callable[[ntp.NDArray[np.float64]], ntp.NDArray[np.float64]]:
     '''
-    Функция для инициализации функции из варианта параметрами a, b, c
+    Функция для инициализации функции из варианта параметрами a, b, c.
 
     Принимаемые параметры:
-    a, b, c - параметры функции из варианта
+    a, b, c - параметры функции из варианта.
 
     Возвращаемое значение:
     Инициализированная параметрами функция, зависящая только от x.
@@ -54,8 +52,6 @@ def function_init(a : float, b : float, c : float) -> tp.Callable[[ntp.NDArray[n
 def config_properties() -> tuple[float, ...]:
     '''
     Функция для получения параметров из файла config.yaml
-
-    Принимаемых значений нет.
 
     Возвращаемое значение:
     Кортеж из параметров n0, h, nk, a, b, c
@@ -71,12 +67,13 @@ def config_properties() -> tuple[float, ...]:
 
 def params_properties(params : list[str]) -> tuple[float, ...]:
     '''
-    Функция для получения параметров из массива строк
+    Функция для получения параметров из массива строк.
 
-    Принимаемых значений нет.
+    Принимаемые значения:
+    params - cписок параметрок в виде строк.    
 
     Возвращаемое значение:
-    Кортеж из параметров n0, h, nk, a, b, c
+    Кортеж из параметров n0, h, nk, a, b, c.
     '''
     n0 = float(params[0])
     h = float(params[1])
@@ -88,12 +85,10 @@ def params_properties(params : list[str]) -> tuple[float, ...]:
 
 def calculate_and_write(n0 : float, h : float, nk : float, a : float, b : float, c : float) -> None:
     '''
-    Функция для вычисления результа и записи в файл results.txt
+    Функция для вычисления результа и записи в файл results.txt.
 
     Принимаемые значения:
-    n0, h, nk, a, b, c - параметры для вычисления значений функции
-
-    Возвращаемых значений нет.
+    n0, h, nk, a, b, c - параметры для вычисления значений функции.
     '''
     n = int((nk - n0) / h)
     x = np.linspace(n0, nk, n)
@@ -102,22 +97,17 @@ def calculate_and_write(n0 : float, h : float, nk : float, a : float, b : float,
 
 def run_with_config() -> None:
     '''
-    Функция для запуска программы с параметрами из файла конфигурации
-
-    Принимаемых значений нет.
-
-    Возвращаемых значений нет.
+    Функция для запуска программы с параметрами из файла конфигурации.
     '''
     properties = config_properties()
     calculate_and_write(*properties)
 
 def run_with_params(params : list[str]) -> None:
     '''
-    Функция для запуска программы с параметрами из консоли
+    Функция для запуска программы с параметрами из консоли.
 
-    Принимаемых значений нет.
-
-    Возвращаемых значений нет.
+    Принимаемые значения:
+    params - cписок параметрок в виде строк.
     '''
     properties = params_properties(params)
     calculate_and_write(*properties)
