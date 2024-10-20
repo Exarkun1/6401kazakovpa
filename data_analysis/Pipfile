@@ -9,6 +9,7 @@ yfinance = "*"
 flake8 = "*"
 openpyxl = "*"
 xlsxwriter = "*"
+setuptools = "*"
 
 [dev-packages]
 ipykernel = "*"

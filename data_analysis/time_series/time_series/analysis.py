@@ -6,7 +6,7 @@ import numpy as np
 import datetime
 from pandas import DataFrame
 
-from time_series.data_frames import create_dataframe
+from time_series.time_series.data_frames import create_dataframe
 
 class TimeSeriesAnalyser:
     """
@@ -107,9 +107,17 @@ class TimeSeriesAnalyser:
             index=[self.index[index_max]],
             index_name=self._interval_name
         )
-
-    def find_extremes(self, 
+    
+    def find_extremes(self,
+                      glb=False,
                       col: str="Open") -> DataFrame:
+        if glb:
+            return self._find_glb_extremes(col)
+        else:
+            return self._find_loc_extremes(col)
+
+    def _find_glb_extremes(self, 
+                           col: str="Open") -> DataFrame:
         """
         Метод поиска экстремумов временного ряда.
 
@@ -120,10 +128,34 @@ class TimeSeriesAnalyser:
             Таблица с временем/датой и значениями экстремумов.
         """
         min_data = self.find_min(col).rename(columns={"Min": "Extreme"})
+        min_data["Type"] = "Min"
         max_data = self.find_max(col).rename(columns={"Max": "Extreme"})
-
+        max_data["Type"] = "Max"
         return pd.concat([min_data, max_data], axis=0)
     
+    def _find_loc_extremes(self,
+                           col: str="Open") -> DataFrame:
+        values = self.get_array(col)
+        indexes = []
+        types = []
+        
+        for i in range(1, self._n-1):
+            if values[i] <= values[i-1] and values[i] <= values[i+1]:
+                indexes.append(i)
+                types.append("Min")
+            elif values[i] >= values[i-1] and values[i] >= values[i+1]:
+                indexes.append(i)
+                types.append("Max")
+        
+        data = create_dataframe(
+            data=values[indexes],
+            data_name="Extreme",
+            index=self.index[indexes],
+            index_name=self._interval_name
+        )
+        data["Type"] = types
+        return data
+            
     def differentiate(self, 
                       col: str="Open") -> DataFrame:
         """
@@ -245,17 +277,23 @@ class TimeSeriesAnalyser:
             Таблица автокорреляции временного ряда.
         """
         values = self.get_array(col)
-        x = values[1:self._n]
-        y = values[0:self._n-1]
-        avg_x = np.average(x)
-        var_x = np.var(x)
-        avg_y = np.average(y)
-        var_y = np.var(y)
-        autocor = (x - avg_x)/var_x * (y - avg_y)/var_y
-        
+        autocor = np.empty([self._n-1])
+        for i in range(0, self._n-1):
+            x = values[i:self._n]
+            y = values[0:self._n-i]
+            avg_x = np.average(x)
+            avg_y = np.average(y)
+            avg_xy = np.average(x*y)
+            std_x = np.std(x)
+            std_y = np.std(y)
+            autocor[i] = (avg_xy - avg_x*avg_y) / (std_x*std_y)
+
         return create_dataframe(
             data=autocor,
             data_name="Autocor",
-            index=self.index[1:self._n],
+            index=self.index[0:self._n-1],
             index_name=self._interval_name
         )
+    
+if __name__ == "__main__":
+    pass

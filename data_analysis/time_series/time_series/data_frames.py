@@ -13,7 +13,7 @@ def get_rows(data : DataFrame) -> tp.Iterable[dict[str, object]]:
         data: таблица.
 
     Returns:
-        Итератор, возвращающий словари, содержащие строки таблицы. 
+        Итератор, возвращающий словари, содержащие строки таблицы.
     """
     for i in range(0, len(data)):
         row = {data.index.name: data.index[i]}
@@ -21,8 +21,8 @@ def get_rows(data : DataFrame) -> tp.Iterable[dict[str, object]]:
             row[index] = value
         yield row
 
-def get_arrays(data : DataFrame, 
-               col : str) -> tuple[np.ndarray, np.ndarray]:
+def get_col_arrays(data : DataFrame, 
+                   col : str) -> tuple[np.ndarray, np.ndarray]:
     """
     Функция получения массивов индекса и столбца.
 
@@ -56,6 +56,21 @@ def create_dataframe(data: np.ndarray | list,
         index=index
         ).rename_axis(index_name)
 
+def get_col(data: DataFrame,
+            col: str) -> DataFrame:
+    return create_dataframe(
+        data=data[col].array,
+        data_name=col,
+        index=data.index.array,
+        index_name=data.index.name
+    )
+
+def join_all(*datas: list[DataFrame]) -> DataFrame:
+    res = datas[0]
+    for i in range(1,len(datas)):
+        res = res.join(datas[i])
+    return res
+
 def write_excel(data : DataFrame,
                 path: str):
     """
@@ -67,3 +82,6 @@ def write_excel(data : DataFrame,
     """
     with ExcelWriter(path, engine='xlsxwriter') as writer:
         data.to_excel(writer, sheet_name='test', startrow=0, startcol=0)
+
+if __name__ == "__main__":
+    pass
