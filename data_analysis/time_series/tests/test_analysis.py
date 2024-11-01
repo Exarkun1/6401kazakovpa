@@ -25,10 +25,14 @@ class TestStockAnalyser(unittest.TestCase):
             )
         self.stock_analyser = TimeSeriesAnalyser(data)
 
-    def test_find_extremes(self):
+    def test_find_blobal_extremes(self):
         data = self.stock_analyser.find_extremes(glb=True)
         self.assertEqual(data["Extreme"].array[0], 1)
         self.assertEqual(data["Extreme"].array[1], 9)
+
+    def test_find_local_extremes(self):
+        data = self.stock_analyser.find_extremes()
+        self.assertEqual(len(data), 0)
 
     def test_differentiate(self):
         data = self.stock_analyser.differentiate()
