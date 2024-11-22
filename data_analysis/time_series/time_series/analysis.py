@@ -4,6 +4,7 @@
 import pandas as pd
 import numpy as np
 import datetime
+import logging
 from pandas import DataFrame
 
 from time_series.time_series.data_frames import create_dataframe, join_dataframes
@@ -20,19 +21,20 @@ class TimeSeriesAnalyser:
             data: временной ряд в форме таблицы.
             interval: минимальный интервал ряда.
         """
-        self._data = data
-        self._n = data.shape[0]
-        self._interval_name = data.index.name
-        self._interval = None
+        self.__data = data
+        self.__n = data.shape[0]
+        self.__interval_name = data.index.name
+        self.__interval = None
+        self.__logger = logging.getLogger(__name__)
 
-        if interval == None:
-            self._interval = data.index[1] - data.index[0]
-            for i in range(2, self._n):
+        if interval is None:
+            self.__interval = data.index[1] - data.index[0]
+            for i in range(2, self.__n):
                 interval = data.index[i] - data.index[i-1]
-                if self._interval > interval:
-                    self._interval = interval
+                if self.__interval > interval:
+                    self.__interval = interval
         else:
-            self._interval = interval
+            self.__interval = interval
 
     def get_array(self, 
                   col: str) -> np.ndarray:
@@ -44,7 +46,12 @@ class TimeSeriesAnalyser:
         Returns:
             Массив значений столбца временного ряда.
         """
-        return self._data[col].array
+        try:
+            return self.__data[col].array
+        except:
+            error = KeyError("Попытка получения не существующего столбца.")
+            self.__logger.error(error)
+            raise error
     
     @property
     def index(self) -> np.ndarray:
@@ -54,7 +61,7 @@ class TimeSeriesAnalyser:
         Returns:
             Массив периодов временного ряда.
         """
-        return self._data.index.array
+        return self.__data.index.array
     
     @property
     def interval(self) -> datetime.timedelta:
@@ -64,7 +71,7 @@ class TimeSeriesAnalyser:
         Returns:
             Минимальный интервал временного ряда.
         """
-        return self._interval
+        return self.__interval
 
     def find_min(self, 
                  col: str="Open") -> DataFrame:
@@ -84,7 +91,7 @@ class TimeSeriesAnalyser:
             data=[values[index_min]],
             data_name="Min",
             index=[self.index[index_min]],
-            index_name=self._interval_name
+            index_name=self.__interval_name
         )
     
     def find_max(self, 
@@ -105,7 +112,7 @@ class TimeSeriesAnalyser:
             data=[values[index_max]],
             data_name="Max",
             index=[self.index[index_max]],
-            index_name=self._interval_name
+            index_name=self.__interval_name
         )
     
     @join_dataframes
@@ -160,7 +167,7 @@ class TimeSeriesAnalyser:
         indexes = []
         types = []
         
-        for i in range(1, self._n-1):
+        for i in range(1, self.__n-1):
             if values[i] <= values[i-1] and values[i] <= values[i+1]:
                 indexes.append(i)
                 types.append("Min")
@@ -172,7 +179,7 @@ class TimeSeriesAnalyser:
             data=values[indexes],
             data_name="Extreme",
             index=self.index[indexes],
-            index_name=self._interval_name
+            index_name=self.__interval_name
         )
         data["Type"] = types
         return data
@@ -190,15 +197,17 @@ class TimeSeriesAnalyser:
             Таблица дифференциала временного ряда.
         """
         values = self.get_array(col)
-        intervals = (self.index[1:self._n] - self.index[0:self._n-1]) / self.interval
-        diffs = (values[1:self._n] - values[0:self._n-1])
+        intervals = (self.index[1:self.__n] - self.index[0:self.__n-1]) / self.interval
+        diffs = (values[1:self.__n] - values[0:self.__n-1])
 
-        return create_dataframe(
+        result = create_dataframe(
             data=diffs/intervals,
             data_name="Diff",
-            index=self.index[0:self._n-1],
-            index_name=self._interval_name
+            index=self.index[0:self.__n-1],
+            index_name=self.__interval_name
         )
+        self.__logger.debug("Вычислен дифференциал временного ряда.")
+        return result
         
     @join_dataframes
     def calc_movavg(self, 
@@ -214,10 +223,13 @@ class TimeSeriesAnalyser:
         Returns:
             Таблица скользящего среднего временного ряда.
         """
+        result = None
         if isinstance(window, int):
-            return self._calc_movarg_int(window, col)
+            result = self._calc_movarg_int(window, col)
         if isinstance(window, datetime.timedelta):
-            return self._calc_movarg_timedelta(window, col)
+            result = self._calc_movarg_timedelta(window, col)
+        self.__logger.debug("Вычислено скользящее среднее временного ряда.")
+        return result
     
     def _calc_movarg_int(self, 
                          window: int, 
@@ -234,11 +246,13 @@ class TimeSeriesAnalyser:
             Таблица скользящего среднего временного ряда.
         """
         if window < 1:
-            raise Exception("Parameter window is less than 1.")
+            error = ValueError("Попытка передачи отрицательного окна.")
+            self.__logger.error(error)
+            raise error
         values = self.get_array(col)
-        movavgs = np.empty([self._n], dtype=float)
+        movavgs = np.empty([self.__n], dtype=float)
 
-        for i in range(0, self._n):
+        for i in range(0, self.__n):
             start_pos = i - window + 1
             if start_pos < 0:
                 start_pos = 0
@@ -248,7 +262,7 @@ class TimeSeriesAnalyser:
             data=movavgs,
             data_name="Moving avg",
             index=self.index,
-            index_name=self._interval_name
+            index_name=self.__interval_name
         )
 
     def _calc_movarg_timedelta(self, 
@@ -266,9 +280,9 @@ class TimeSeriesAnalyser:
             Таблица скользящего среднего временного ряда.
         """
         values = self.get_array(col)
-        movavgs = np.empty([self._n], dtype=float)
+        movavgs = np.empty([self.__n], dtype=float)
 
-        for i in range(0, self._n):
+        for i in range(0, self.__n):
             sum_prices = 0
             n = 0
             for j in range(i, -1, -1):
@@ -284,7 +298,7 @@ class TimeSeriesAnalyser:
             data=movavgs,
             data_name="Moving avg",
             index=self.index,
-            index_name=self._interval_name
+            index_name=self.__interval_name
         )
 
     @join_dataframes
@@ -300,10 +314,10 @@ class TimeSeriesAnalyser:
             Таблица автокорреляции временного ряда.
         """
         values = self.get_array(col)
-        autocor = np.empty([self._n-1])
-        for i in range(0, self._n-1):
-            x = values[i:self._n]
-            y = values[0:self._n-i]
+        autocor = np.empty([self.__n-1])
+        for i in range(0, self.__n-1):
+            x = values[i:self.__n]
+            y = values[0:self.__n-i]
             avg_x = np.average(x)
             avg_y = np.average(y)
             avg_xy = np.average(x*y)
@@ -311,12 +325,14 @@ class TimeSeriesAnalyser:
             std_y = np.std(y)
             autocor[i] = (avg_xy - avg_x*avg_y) / (std_x*std_y)
 
-        return create_dataframe(
+        result = create_dataframe(
             data=autocor,
             data_name="Autocor",
-            index=self.index[0:self._n-1],
-            index_name=self._interval_name
+            index=self.index[0:self.__n-1],
+            index_name=self.__interval_name
         )
+        self.__logger.debug("Вычислена атокорреляция временного ряда.")
+        return result
     
 if __name__ == "__main__":
     pass
