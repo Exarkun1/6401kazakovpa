@@ -113,13 +113,13 @@ class JoinedDataframe:
     """
     Объект, хранящий список таблиц на соединнение.
     """
-    _instance = None
+    __instance = None
 
     def __new__(cls):
-        if cls._instance == None:
-            cls._instance = super(__class__, cls).__new__(cls)
-            cls._instance._dataframes = []
-        return cls._instance
+        if cls.__instance == None:
+            cls.__instance = super(__class__, cls).__new__(cls)
+            cls.__instance.__dataframes = []
+        return cls.__instance
     
     def add(self,
             data: DataFrame):
@@ -129,7 +129,7 @@ class JoinedDataframe:
         Args:
             data: таблица для добавления.
         """
-        self._dataframes.append(data)
+        self.__dataframes.append(data)
 
     def get_join(self) -> DataFrame:
         """
@@ -138,7 +138,7 @@ class JoinedDataframe:
         Returns:
             Соединённая таблица.
         """
-        return join_all(*self._dataframes)
+        return join_all(*self.__dataframes)
     
     def write(self, 
               path: str):
@@ -154,7 +154,7 @@ class JoinedDataframe:
         """
         Метод очистки списка таблиц на соединение.
         """
-        self._dataframes.clear()
+        self.__dataframes.clear()
 
 if __name__ == "__main__":
     pass

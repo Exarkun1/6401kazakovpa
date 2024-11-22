@@ -1,0 +1,1 @@
+from services.stock_services import StockObserver
